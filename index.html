@@ -57,7 +57,7 @@
   <!-- ADD STUDENT PAGE -->
   <div id="add" class="page">
     <h2>Add Student</h2>
-    <label>Student 3‑Digit Code:</label><br>
+    <label>Student 3-Digit Code:</label><br>
     <input id="code" type="number" placeholder="3XX" minlength="3" maxlength="3"><br><br>
 
     <label>Full Name:</label><br>
@@ -77,11 +77,23 @@
     <button onclick="showPage('main')">Back</button>
   </div>
 
+  <!-- QR SCANNER PAGE -->
+  <div id="scanner" class="page center">
+    <h2>Scan QR Code</h2>
+
+    <!-- Video feed -->
+    <video id="qr-video" style="width: 100%; max-width: 400px; border-radius: 10px; background: #000;"></video>
+
+    <button onclick="closeScanner()">Back</button>
+  </div>
+
   <script src="https://unpkg.com/qr-scanner@1.4.2/qr-scanner.umd.min.js"></script>
+
 <script>
     let students = JSON.parse(localStorage.getItem('students') || '[]');
+    let qrScanner;
 
-    // Auto-load student from URL code parameter
+    // Auto-load student from URL ?code=123
     const urlParams = new URLSearchParams(window.location.search);
     const scannedCode = urlParams.get('code');
     if (scannedCode) {
@@ -139,16 +151,23 @@
       localStorage.setItem('students', JSON.stringify(students));
     }
 
-    // Camera QR scanner
+    // CAMERA + QR SCANNER
     async function openScanner() {
       showPage('scanner');
 
       const video = document.getElementById('qr-video');
-      const qrScanner = new QrScanner(video, result => {
+
+      qrScanner = new QrScanner(video, result => {
         qrScanner.stop();
         handleScannedCode(result.data);
       });
-      qrScanner.start();
+
+      await qrScanner.start();
+    }
+
+    function closeScanner() {
+      if (qrScanner) qrScanner.stop();
+      showPage('main');
     }
 
     function handleScannedCode(code) {
