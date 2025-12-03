@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student QR Attendance</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f1f1f1;
+    }
+    .page {
+      display: none;
+      padding: 20px;
+    }
+    .active {
+      display: block;
+    }
+    .center {
+      text-align: center;
+      margin-top: 40px;
+    }
+    button {
+      display: block;
+      width: 250px;
+      margin: 15px auto;
+      padding: 15px;
+      font-size: 18px;
+      cursor: pointer;
+      border-radius: 8px;
+      border: none;
+      background: #007bff;
+      color: white;
+    }
+    .student-item {
+      background: white;
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- MAIN PAGE -->
+  <div id="main" class="page active center">
+    <h1>Student Attendance</h1>
+    <button onclick="openScanner()">Scan QR Code</button>
+    <button onclick="showPage('list')">Students List</button>
+    <button onclick="showPage('add')">Add Student</button>
+  </div>
+
+  <!-- ADD STUDENT PAGE -->
+  <div id="add" class="page">
+    <h2>Add Student</h2>
+    <label>Student 3‑Digit Code:</label><br>
+    <input id="code" type="number" placeholder="3XX" minlength="3" maxlength="3"><br><br>
+
+    <label>Full Name:</label><br>
+    <input id="fullname" type="text" placeholder="Full Name"><br><br>
+
+    <label>Class:</label><br>
+    <input id="class" type="text" placeholder="Class"><br><br>
+
+    <button onclick="saveStudent()">Save Student</button>
+    <button onclick="showPage('main')">Back</button>
+  </div>
+
+  <!-- STUDENTS LIST PAGE -->
+  <div id="list" class="page">
+    <h2>Students List</h2>
+    <div id="students"></div>
+    <button onclick="showPage('main')">Back</button>
+  </div>
+
+  <script src="https://unpkg.com/qr-scanner@1.4.2/qr-scanner.umd.min.js"></script>
+<script>
+    let students = JSON.parse(localStorage.getItem('students') || '[]');
+
+    // Auto-load student from URL code parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const scannedCode = urlParams.get('code');
+    if (scannedCode) {
+      const s = students.find(st => st.code === scannedCode);
+      if (s) {
+        s.present = !s.present;
+        localStorage.setItem('students', JSON.stringify(students));
+        alert(`Attendance toggled for: ${s.fullname}`);
+      }
+    }
+
+    function showPage(id) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      if (id === 'list') renderStudents();
+    }
+
+    function saveStudent() {
+      let code = document.getElementById('code').value;
+      let fullname = document.getElementById('fullname').value.trim();
+      let cls = document.getElementById('class').value;
+
+      if (!code || code.length !== 3 || code[0] !== '3') return alert("Code must be 3 digits starting with 3");
+      if (fullname.split(" ").length < 2) return alert("Full name must be at least 2 words");
+
+      students.push({ code, fullname, class: cls, present: false });
+      localStorage.setItem('students', JSON.stringify(students));
+
+      alert("Saved!");
+      showPage('main');
+    }
+
+    function renderStudents() {
+      let box = document.getElementById('students');
+      box.innerHTML = '';
+
+      students.forEach((s, i) => {
+        let div = document.createElement('div');
+        div.className = 'student-item';
+        div.innerHTML = `
+          <div>
+            <b>${s.fullname}</b><br>
+            Code: ${s.code} | Class: ${s.class}
+          </div>
+          <label>
+            <input type="checkbox" ${s.present ? 'checked' : ''} onclick="togglePresent(${i})">
+          </label>
+        `;
+        box.appendChild(div);
+      });
+    }
+
+    function togglePresent(i) {
+      students[i].present = !students[i].present;
+      localStorage.setItem('students', JSON.stringify(students));
+    }
+
+    // Camera QR scanner
+    async function openScanner() {
+      showPage('scanner');
+
+      const video = document.getElementById('qr-video');
+      const qrScanner = new QrScanner(video, result => {
+        qrScanner.stop();
+        handleScannedCode(result.data);
+      });
+      qrScanner.start();
+    }
+
+    function handleScannedCode(code) {
+      const s = students.find(st => st.code === code);
+      if (!s) return alert("Student not found");
+
+      s.present = !s.present;
+      localStorage.setItem('students', JSON.stringify(students));
+      alert(`Attendance toggled for: ${s.fullname}`);
+      showPage('main');
+    }
+</script>
+
+</body>
+</html>
