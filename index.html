@@ -160,27 +160,38 @@
     }
 
     function handleScannedCode(code) {
-      // Extract code from URL if QR contains a full link
+      // Clean scanner noise
+      code = code.trim();
+
+      // Extract from URL if present
       if (code.includes("code=")) {
         try {
           const url = new URL(code);
           code = url.searchParams.get("code");
         } catch (e) {
-          console.log("Invalid URL in QR");
+          console.log("Invalid URL format");
         }
       }
 
-      const s = students.find(st => st.code === code);
+      // Keep only first 3 digits
+      code = code.replace(/\D/g, '').slice(0, 3);
 
-      if (!s) {
+      const sIndex = students.findIndex(st => st.code === code);
+      if (sIndex === -1) {
         alert("Student not found");
         return;
       }
 
-      s.present = !s.present;
+      // Toggle attendance
+      students[sIndex].present = !students[sIndex].present;
       localStorage.setItem('students', JSON.stringify(students));
 
-      alert(`Attendance toggled for: ${s.fullname}`);
+      // Update UI if list is open
+      if (document.getElementById("list").classList.contains("active")) {
+        renderStudents();
+      }
+
+      alert(`Attendance toggled for: ${students[sIndex].fullname}`);
       showPage('main');
     }
 </script>
