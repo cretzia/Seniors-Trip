@@ -42,6 +42,12 @@
       justify-content: space-between;
       align-items: center;
     }
+    .delete-btn {
+      color: red;
+      cursor: pointer;
+      font-weight: bold;
+      margin-left: 10px;
+    }
   </style>
 </head>
 <body>
@@ -49,7 +55,6 @@
   <!-- MAIN PAGE -->
   <div id="main" class="page active center">
     <h1>Student Attendance</h1>
-    <button onclick="openScanner()">Scan QR Code</button>
     <button onclick="showPage('list')">Students List</button>
     <button onclick="showPage('add')">Add Student</button>
   </div>
@@ -70,14 +75,6 @@
     <button onclick="showPage('main')">Back</button>
   </div>
 
-  <!-- SCANNER PAGE -->
-  <div id="scanner" class="page">
-    <h2>Scan QR Code</h2>
-    <video id="qr-video" style="width: 100%; max-width: 500px; border: 3px solid black;"></video>
-    <br><br>
-    <button onclick="showPage('main')">Back</button>
-  </div>
-
   <!-- STUDENTS LIST PAGE -->
   <div id="list" class="page">
     <h2>Students List</h2>
@@ -85,21 +82,8 @@
     <button onclick="showPage('main')">Back</button>
   </div>
 
-  <script src="https://unpkg.com/qr-scanner@1.4.2/qr-scanner.umd.min.js"></script>
 <script>
     let students = JSON.parse(localStorage.getItem('students') || '[]');
-
-    // Auto-load student from URL code parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const scannedCode = urlParams.get('code');
-    if (scannedCode) {
-      const s = students.find(st => st.code === scannedCode);
-      if (s) {
-        s.present = !s.present;
-        localStorage.setItem('students', JSON.stringify(students));
-        alert(`Attendance toggled for: ${s.fullname}`);
-      }
-    }
 
     function showPage(id) {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -134,9 +118,10 @@
             <b>${s.fullname}</b><br>
             Code: ${s.code} | Class: ${s.class}
           </div>
-          <label>
+          <div>
             <input type="checkbox" ${s.present ? 'checked' : ''} onclick="togglePresent(${i})">
-          </label>
+            <span class="delete-btn" onclick="deleteStudent(${i})">&#128465;</span>
+          </div>
         `;
         box.appendChild(div);
       });
@@ -147,52 +132,13 @@
       localStorage.setItem('students', JSON.stringify(students));
     }
 
-    // Camera QR scanner
-    async function openScanner() {
-      showPage('scanner');
-
-      const video = document.getElementById('qr-video');
-      const qrScanner = new QrScanner(video, result => {
-        qrScanner.stop();
-        handleScannedCode(result.data);
-      });
-      qrScanner.start();
-    }
-
-    function handleScannedCode(code) {
-      // Clean scanner noise
-      code = code.trim();
-
-      // Extract from URL if present
-      if (code.includes("code=")) {
-        try {
-          const url = new URL(code);
-          code = url.searchParams.get("code");
-        } catch (e) {
-          console.log("Invalid URL format");
-        }
-      }
-
-      // Keep only first 3 digits
-      code = code.replace(/\D/g, '').slice(0, 3);
-
-      const sIndex = students.findIndex(st => st.code === code);
-      if (sIndex === -1) {
-        alert("Student not found");
-        return;
-      }
-
-      // Toggle attendance
-      students[sIndex].present = !students[sIndex].present;
-      localStorage.setItem('students', JSON.stringify(students));
-
-      // Update UI if list is open
-      if (document.getElementById("list").classList.contains("active")) {
+    function deleteStudent(i) {
+      const confirmDelete = confirm(`Are you sure you want to delete ${students[i].fullname}?`);
+      if (confirmDelete) {
+        students.splice(i, 1);
+        localStorage.setItem('students', JSON.stringify(students));
         renderStudents();
       }
-
-      alert(`Attendance toggled for: ${students[sIndex].fullname}`);
-      showPage('main');
     }
 </script>
 
