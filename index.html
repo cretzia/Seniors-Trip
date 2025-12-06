@@ -70,6 +70,14 @@
     <button onclick="showPage('main')">Back</button>
   </div>
 
+  <!-- SCANNER PAGE -->
+  <div id="scanner" class="page">
+    <h2>Scan QR Code</h2>
+    <video id="qr-video" style="width: 100%; max-width: 500px; border: 3px solid black;"></video>
+    <br><br>
+    <button onclick="showPage('main')">Back</button>
+  </div>
+
   <!-- STUDENTS LIST PAGE -->
   <div id="list" class="page">
     <h2>Students List</h2>
@@ -174,7 +182,6 @@
 
       alert(`Attendance toggled for: ${s.fullname}`);
       showPage('main');
-    }
     }
 </script>
 
